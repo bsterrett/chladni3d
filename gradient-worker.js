@@ -9,7 +9,8 @@ const L2 = 0.02;
 const L3 = 0.018;
 
 class ChladniParams {
-    constructor (m, n, l) {
+    constructor (d, m, n, l) {
+        this.d = d;
         this.m = m;
         this.n = n;
         this.l = l;
@@ -17,15 +18,15 @@ class ChladniParams {
 }
 
 const CHLADNI_PARAMS = [
-    new ChladniParams(1, 2, L1),
-    new ChladniParams(1, 3, L3),
-    new ChladniParams(1, 4, L2),
-    new ChladniParams(1, 5, L2),
-    new ChladniParams(2, 3, L2),
-    new ChladniParams(2, 5, L2),
-    new ChladniParams(3, 4, L2),
-    new ChladniParams(3, 5, L2),
-    new ChladniParams(3, 7, L2),
+    new ChladniParams(2, 1, 2, L1),
+    new ChladniParams(2, 1, 3, L3),
+    new ChladniParams(2, 1, 4, L2),
+    new ChladniParams(2, 1, 5, L2),
+    new ChladniParams(2, 2, 3, L2),
+    new ChladniParams(2, 2, 5, L2),
+    new ChladniParams(2, 3, 4, L2),
+    new ChladniParams(2, 3, 5, L2),
+    new ChladniParams(2, 3, 7, L2),
 ];
 
 class GradientWorker {

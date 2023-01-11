@@ -2,6 +2,7 @@
 import * as Utils from "./utils.js";
 import {Debouncer} from "./utils.js";
 
+const DIMENSIONS = 3;
 const NUM_PARTICLES = 30000;
 const DEFAULT_RANDOM_VIBRATION_INTENSITY = 2;
 const MAX_GRADIENT_INTENSITY = .4;
@@ -13,7 +14,7 @@ class ChladniApp {
 
     constructor () {
         this.canvas = document.createElement("canvas");
-        this.canvas.classList.add("pixelated");
+        // this.canvas.classList.add("pixelated");
         this.context = this.canvas.getContext("2d");
         document.body.appendChild(this.canvas);
 
@@ -35,10 +36,11 @@ class ChladniApp {
 
         this.width = window.innerWidth / CANVAS_SCALE;
         this.height = window.innerHeight / CANVAS_SCALE;
+        this.depth = Math.min(this.width, this.height);
 
         const debounceTimer = new Debouncer();
 
-        this.particles = new Float32Array(NUM_PARTICLES * 2);
+        this.particles = new Float32Array(NUM_PARTICLES * DIMENSIONS);
 
         this.nonResonantColor = Utils.cssColorToColor(Utils.readCssVarAsHexNumber("non-resonant-color"));
         this.colorIndex = 0;
@@ -87,12 +89,15 @@ class ChladniApp {
     resize() {
         this.width = Math.ceil(window.innerWidth / CANVAS_SCALE);
         this.height = Math.ceil(window.innerHeight / CANVAS_SCALE);
+        this.depth = Math.min(this.width, this.height);
         this.canvas.setAttribute("width", this.width);
         this.canvas.setAttribute("height", this.height);
+        this.canvas.setAttribute("depth", this.depth);
 
         this.worker.postMessage({
             width: this.width,
             height: this.height,
+            depth: this.depth,
         });
 
         this.imageData = this.context.getImageData(0, 0, this.width, this.height);
@@ -121,15 +126,22 @@ class ChladniApp {
     checkForFallenParticles() {
         const SLACK = 100;  // allow particles to really leave the screen before replacing them
 
-        for (let i = 0; i < this.particles.length; i += 2) {
+        for (let i = 0; i < this.particles.length; i += DIMENSIONS) {
             let x = this.particles[i];
             let y = this.particles[i + 1];
 
             const didFall = x < -SLACK || x >= this.width + SLACK || y < -SLACK || y >= this.height + SLACK;
+            if (DIMENSIONS > 2) {
+                let z = this.particles[i + 2];
+                didFall ||= z < -SLACK || z >= this.depth + SLACK;
+            }
 
             if (didFall) {
                 this.particles[i] = Math.random() * this.width;
                 this.particles[i + 1] = Math.random() * this.height;
+                if (DIMENSIONS > 2) {
+                    this.particles[i + 2] = Math.random() * this.depth;
+                }
             }
         }
     }
