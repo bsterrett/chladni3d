@@ -2,12 +2,20 @@
 import * as Utils from "./utils.js";
 import {Debouncer} from "./utils.js";
 
-const DIMENSIONS = 3;
+const DIMENSIONS = 2;
 const NUM_PARTICLES = 30000;
 const DEFAULT_RANDOM_VIBRATION_INTENSITY = 2;
 const MAX_GRADIENT_INTENSITY = .4;
 const DEBUG_VIBRATION_LEVELS = false;
 const CANVAS_SCALE = 1.5;
+
+
+class Tuple {
+    constructor(...args) {
+        this.contents = args;
+        this.length = this.contents.length;
+    }
+}
 
 
 class ChladniApp {
@@ -40,7 +48,8 @@ class ChladniApp {
 
         const debounceTimer = new Debouncer();
 
-        this.particles = new Float32Array(NUM_PARTICLES * DIMENSIONS);
+        // this.particles = new Float32Array(NUM_PARTICLES * DIMENSIONS);
+        this.particles = new Array(NUM_PARTICLES);
 
         this.nonResonantColor = Utils.cssColorToColor(Utils.readCssVarAsHexNumber("non-resonant-color"));
         this.colorIndex = 0;
@@ -98,6 +107,7 @@ class ChladniApp {
             width: this.width,
             height: this.height,
             depth: this.depth,
+            dimensions: DIMENSIONS
         });
 
         this.imageData = this.context.getImageData(0, 0, this.width, this.height);
@@ -105,9 +115,26 @@ class ChladniApp {
         // recalculateGradients();
         console.info(`New buffer created (${this.width}x${this.height})`);
 
-        for (let i = 0; i < this.particles.length; i += 2) {
-            this.particles[i] = Math.random() * this.width;
-            this.particles[i + 1] = Math.random() * this.height;
+        // for (let i = 0; i < this.particles.length; i += 2) {
+        //     this.particles[i] = Math.random() * this.width;
+        //     this.particles[i + 1] = Math.random() * this.height;
+        // }
+
+        for (let i = 0; i < this.particles.length; i += 1) {
+            let newPos;
+            if (DIMENSIONS == 2) {
+                newPos = new Tuple(
+                    Math.random() * this.width,
+                    Math.random() * this.height,
+                );
+            } else {
+                newPos = new Tuple(
+                    Math.random() * this.width,
+                    Math.random() * this.height,
+                    Math.random() * this.depth
+                );
+            }
+            this.particles[i] = newPos;
         }
     }
 
@@ -126,35 +153,64 @@ class ChladniApp {
     checkForFallenParticles() {
         const SLACK = 100;  // allow particles to really leave the screen before replacing them
 
-        for (let i = 0; i < this.particles.length; i += DIMENSIONS) {
-            let x = this.particles[i];
-            let y = this.particles[i + 1];
+        // for (let i = 0; i < this.particles.length; i += DIMENSIONS) {
+        //     let x = this.particles[i];
+        //     let y = this.particles[i + 1];
+        for (let i = 0; i < this.particles.length; i += 1) {
+            let x = this.particles[i][0];
+            let y = this.particles[i][1];
 
-            const didFall = x < -SLACK || x >= this.width + SLACK || y < -SLACK || y >= this.height + SLACK;
+            let didFall = x < -SLACK || x >= this.width + SLACK || y < -SLACK || y >= this.height + SLACK;
             if (DIMENSIONS > 2) {
-                let z = this.particles[i + 2];
+                let z = this.particles[i][2];
                 didFall ||= z < -SLACK || z >= this.depth + SLACK;
             }
 
             if (didFall) {
-                this.particles[i] = Math.random() * this.width;
-                this.particles[i + 1] = Math.random() * this.height;
-                if (DIMENSIONS > 2) {
-                    this.particles[i + 2] = Math.random() * this.depth;
+                let newPos;
+                if (DIMENSIONS == 2) {
+                    newPos = new Tuple(
+                        Math.random() * this.width,
+                        Math.random() * this.height,
+                    );
+                } else {
+                    newPos = new Tuple(
+                        Math.random() * this.width,
+                        Math.random() * this.height,
+                        Math.random() * this.depth
+                    );
                 }
+                this.particles[i] = newPos;
+
+                // this.particles[i] = Math.random() * this.width;
+                // this.particles[i + 1] = Math.random() * this.height;
+                // if (DIMENSIONS > 2) {
+                //     this.particles[i + 2] = Math.random() * this.depth;
+                // }
             }
         }
     }
 
-    obtainGradientAt(x, y) {
+    obtainGradientAt(x, y, z) {
         // used to lerp nearest gradient grid corners here, but it's too expensive and doesn't make any visual difference
         x = Math.round(x);
         y = Math.round(y);
-        const index = (y * this.width + x) * 2;
-        return [
-            this.gradients[index],
-            this.gradients[index + 1]
-        ];
+        z = Math.round(z);
+        let index;
+        if (DIMENSIONS == 2) {
+            index = (y * this.width + x) * 2;
+            return [
+                this.gradients[index],
+                this.gradients[index + 1]
+            ];
+        } else if (DIMENSIONS == 3) {
+            index = (z * this.width * this.height + y * this.width + x) * 3;
+            return [
+                this.gradients[index],
+                this.gradients[index + 1],
+                this.gradients[index + 2]
+            ];
+        }
     }
 
     update() {
@@ -176,24 +232,70 @@ class ChladniApp {
 
         const color = this.gradients ? this.selectedColor : this.nonResonantColor;
 
-        for (let i = 0; i < this.particles.length; i += 2) {
-            let x = this.particles[i];
-            let y = this.particles[i + 1];
+        // for (let i = 0; i < this.particles.length; i += 2) {
+        //     let x = this.particles[i];
+        //     let y = this.particles[i + 1];
+
+        //     if (this.gradients) {
+        //         const [gradX, gradY] = this.obtainGradientAt(x, y);
+
+        //         // descend gradient
+        //         x += MAX_GRADIENT_INTENSITY * gradX;
+        //         y += MAX_GRADIENT_INTENSITY * gradY;
+        //     }
+
+        //     // random vibration
+        //     x += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
+        //     y += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
+
+        //     this.particles[i] = x;
+        //     this.particles[i + 1] = y;
+
+        //     this.buffer[Math.round(y) * this.width + Math.round(x)] = color;
+        // }
+
+        for (let i = 0; i < this.particles.length; i += 1) {
+            let particle = this.particles[i];
+            let x = this.particles[i][0];
+            let y = this.particles[i][1];
+
+            // if (this.gradients) {
+            //     const [gradX, gradY] = this.obtainGradientAt(x, y, z);
+
+            //     // descend gradient
+            //     x += MAX_GRADIENT_INTENSITY * gradX;
+            //     y += MAX_GRADIENT_INTENSITY * gradY;
+            // }
 
             if (this.gradients) {
-                const [gradX, gradY] = this.obtainGradientAt(x, y);
+                if (DIMENSIONS == 2) {
+                    let [gradX, gradY] = this.obtainGradientAt(x, y, 0);
 
-                // descend gradient
-                x += MAX_GRADIENT_INTENSITY * gradX;
-                y += MAX_GRADIENT_INTENSITY * gradY;
+                    // descend gradient
+                    x += MAX_GRADIENT_INTENSITY * gradX;
+                    y += MAX_GRADIENT_INTENSITY * gradY;
+                } else {
+                    let z = this.particles[i][2];
+                    let [gradX, gradY, gradZ] = this.obtainGradientAt(x, y, z);
+
+                    // descend gradient
+                    x += MAX_GRADIENT_INTENSITY * gradX;
+                    y += MAX_GRADIENT_INTENSITY * gradY;
+                    z += MAX_GRADIENT_INTENSITY * gradZ;
+                }
             }
 
             // random vibration
             x += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
             y += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
+            
+            this.particles[i][0] = x;
+            this.particles[i][1] = y;
 
-            this.particles[i] = x;
-            this.particles[i + 1] = y;
+            if (DIMENSIONS > 2) {
+                z += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
+                this.particles[i][2] = z;
+            }
 
             this.buffer[Math.round(y) * this.width + Math.round(x)] = color;
         }

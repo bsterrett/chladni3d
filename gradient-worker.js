@@ -36,6 +36,8 @@ class GradientWorker {
         this.gradients = null;
         this.width = null;
         this.height = null;
+        this.depth = null;
+        this.dimensions = null;
         this.gradientParametersIndex = 0;
         this.bakingTimer = null;
         this.isResonantRound = true;
@@ -46,7 +48,9 @@ class GradientWorker {
     receiveUpdateFromMainThread(message) {
         this.width = message.data.width;
         this.height = message.data.height;
-        console.info(`Message from main thread: width=${this.width}, height=${this.height}`);
+        this.depth = message.data.depth;
+        this.dimensions = message.data.dimensions;
+        console.info(`Message from main thread: width=${this.width}, height=${this.height}, depth=${this.depth}, dimensions=${this.dimensions}`);
 
         if (this.bakingTimer) {
             clearInterval(this.bakingTimer);
