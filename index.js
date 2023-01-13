@@ -122,16 +122,19 @@ class ChladniApp {
 
         for (let i = 0; i < this.particles.length; i += 1) {
             let newPos;
+            let x = Math.random() * this.width;
+            let y = Math.random() * this.height;
             if (DIMENSIONS == 2) {
                 newPos = new Tuple(
-                    Math.random() * this.width,
-                    Math.random() * this.height,
+                    x,
+                    y,
                 );
             } else {
+                let z = Math.random() * this.depth;
                 newPos = new Tuple(
-                    Math.random() * this.width,
-                    Math.random() * this.height,
-                    Math.random() * this.depth
+                    x,
+                    y,
+                    z
                 );
             }
             this.particles[i] = newPos;
@@ -156,13 +159,15 @@ class ChladniApp {
         // for (let i = 0; i < this.particles.length; i += DIMENSIONS) {
         //     let x = this.particles[i];
         //     let y = this.particles[i + 1];
+        // }
+
         for (let i = 0; i < this.particles.length; i += 1) {
-            let x = this.particles[i][0];
-            let y = this.particles[i][1];
+            let x = this.particles[i].contents[0];
+            let y = this.particles[i].contents[1];
 
             let didFall = x < -SLACK || x >= this.width + SLACK || y < -SLACK || y >= this.height + SLACK;
             if (DIMENSIONS > 2) {
-                let z = this.particles[i][2];
+                let z = this.particles[i].contents[2];
                 didFall ||= z < -SLACK || z >= this.depth + SLACK;
             }
 
@@ -181,12 +186,6 @@ class ChladniApp {
                     );
                 }
                 this.particles[i] = newPos;
-
-                // this.particles[i] = Math.random() * this.width;
-                // this.particles[i + 1] = Math.random() * this.height;
-                // if (DIMENSIONS > 2) {
-                //     this.particles[i + 2] = Math.random() * this.depth;
-                // }
             }
         }
     }
@@ -256,16 +255,9 @@ class ChladniApp {
 
         for (let i = 0; i < this.particles.length; i += 1) {
             let particle = this.particles[i];
-            let x = this.particles[i][0];
-            let y = this.particles[i][1];
-
-            // if (this.gradients) {
-            //     const [gradX, gradY] = this.obtainGradientAt(x, y, z);
-
-            //     // descend gradient
-            //     x += MAX_GRADIENT_INTENSITY * gradX;
-            //     y += MAX_GRADIENT_INTENSITY * gradY;
-            // }
+            let x = this.particles[i].contents[0];
+            let y = this.particles[i].contents[1];
+            // console.log(particle);
 
             if (this.gradients) {
                 if (DIMENSIONS == 2) {
@@ -275,7 +267,7 @@ class ChladniApp {
                     x += MAX_GRADIENT_INTENSITY * gradX;
                     y += MAX_GRADIENT_INTENSITY * gradY;
                 } else {
-                    let z = this.particles[i][2];
+                    let z = this.particles[i].contents[2];
                     let [gradX, gradY, gradZ] = this.obtainGradientAt(x, y, z);
 
                     // descend gradient
@@ -288,13 +280,13 @@ class ChladniApp {
             // random vibration
             x += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
             y += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
-            
-            this.particles[i][0] = x;
-            this.particles[i][1] = y;
+
+            this.particles[i].contents[0] = x;
+            this.particles[i].contents[1] = y;
 
             if (DIMENSIONS > 2) {
                 z += Math.random() * this.vibrationIntensity - this.halfVibrationIntensity;
-                this.particles[i][2] = z;
+                this.particles[i].contents[2] = z;
             }
 
             this.buffer[Math.round(y) * this.width + Math.round(x)] = color;

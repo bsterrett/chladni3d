@@ -50,6 +50,11 @@ class GradientWorker {
         this.height = message.data.height;
         this.depth = message.data.depth;
         this.dimensions = message.data.dimensions;
+
+        this.cardinality = this.width * this.height;
+        if (this.dimensions == 3) {
+            this.cardinality *= this.depth;
+        }
         console.info(`Message from main thread: width=${this.width}, height=${this.height}, depth=${this.depth}, dimensions=${this.dimensions}`);
 
         if (this.bakingTimer) {
@@ -73,7 +78,7 @@ class GradientWorker {
         const TX = Math.random() * this.height;
         const TY = Math.random() * this.height;
 
-        this.vibrationValues = new Float32Array(this.width * this.height);
+        this.vibrationValues = new Float32Array(this.cardinality);
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const scaledX = x * L + TX;
